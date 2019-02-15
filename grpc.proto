@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package stream;
+
+message Header {
+    int64 requestTimestamp = 1;
+    int64 responseTimestamp = 2;
+}
+
+message Body {
+    string data = 1;
+}
+
+message Request {
+    Header header = 1;
+    Body body = 2;
+}
+
+message Response {
+    Header header = 1;
+    Body body = 2;
+}
+
+service Grpc {
+    rpc rpcService(Request) returns (Response) {} // typical rpc service
+    rpc serverSideStreamService(Request) returns (stream Response) {} // client requests once, server continuously responses
+    rpc clientSideStreamService(stream Request) returns (Response) {} // client continuously requests, server responses once
+    // rpc bidirectionalStreamService(stream Request) returns (stream Response) {} // both client and server are requesting and responding
+}
