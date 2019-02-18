@@ -98,7 +98,6 @@ func clientSideStream(client pb.GrpcClient) error {
 	}
 
 	requestTimestamp := time.Now().Unix()
-	// when the for loop ends, err == io.EOF and server will receive it
 	for i := 0; i < 5 ; i++ {
 		request := &pb.Request{
 			Header: &pb.Header{RequestTimestamp: requestTimestamp},
@@ -115,6 +114,7 @@ func clientSideStream(client pb.GrpcClient) error {
 		time.Sleep(time.Second)
 	}
 
+	// CloseAndRecv() method will close the stream, sending err == io.EOF to the server side
 	r, err := stream.CloseAndRecv()
 	if err != nil {
 		log.Fatalf("Failure: %v", err)
@@ -133,7 +133,7 @@ func BidirectionalStream(client pb.GrpcClient) error {
 		return err
 	}
 
-	for {
+	for i := 0; i < 5; i++ {
 		request := &pb.Request{
 			Header: &pb.Header{RequestTimestamp: time.Now().Unix()},
 			Body: &pb.Body{Data: fmt.Sprintf("client has sent request data")},
@@ -156,6 +156,9 @@ func BidirectionalStream(client pb.GrpcClient) error {
 		}
 		log.Printf("RequestTimestamp: %v, ResponseTimestamp: %v, Message: %v", r.Header.RequestTimestamp, r.Header.ResponseTimestamp, r.Body.Data)
 	}
+
+	// close the stream
+	stream.CloseSend()
 
 	return nil
 }

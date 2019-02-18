@@ -70,13 +70,14 @@ func (s *server) ClientSideStreamService(stream pb.Grpc_ClientSideStreamServiceS
 		if index == 0 {
 			requestTimestamp = in.Header.RequestTimestamp
 		}
-		// at this moment in == nil and err == io.EOF
+		// when err == io.EOF, in == nil
 		if err == io.EOF {
 			response := &pb.Response{
 				Header: &pb.Header{RequestTimestamp: requestTimestamp, ResponseTimestamp: time.Now().Unix()},
 				Body: &pb.Body{Data: fmt.Sprintf("finished receiving data")},
 			}
 			log.Printf("RequestTimestamp: %v, ResponseTimestamp: %v, Message: %v", response.Header.RequestTimestamp, response.Header.ResponseTimestamp, response.Body.Data)
+			// SendAndClose() method will close the stream, sending err == io.EOF to the client
 			return stream.SendAndClose(response)
 		}
 		if err != nil {
