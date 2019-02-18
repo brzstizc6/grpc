@@ -25,5 +25,5 @@ service Grpc {
     rpc rpcService(Request) returns (Response) {} // typical rpc service
     rpc serverSideStreamService(Request) returns (stream Response) {} // client requests once, server continuously responses
     rpc clientSideStreamService(stream Request) returns (Response) {} // client continuously requests, server responses once
-    // rpc bidirectionalStreamService(stream Request) returns (stream Response) {} // both client and server are requesting and responding
+    rpc bidirectionalStreamService(stream Request) returns (stream Response) {} // both client and server are requesting and responding
 }

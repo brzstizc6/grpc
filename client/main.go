@@ -35,6 +35,8 @@ func main() {
 		serverSideStream(client)
 	case "clientSide":
 		clientSideStream(client)
+	case "bidirectional":
+		BidirectionalStream(client)
 	default:
 		rpc(client)
 	}
@@ -62,13 +64,15 @@ func rpc(client pb.GrpcClient) error {
 func serverSideStream(client pb.GrpcClient) error {
 	request := &pb.Request{
 		Header: &pb.Header{RequestTimestamp: time.Now().Unix()},
-		Body: &pb.Body{Data: "hello world"},
+		Body: &pb.Body{Data: "starting request"},
 	}
 	stream, err := client.ServerSideStreamService(context.Background(), request)
 	if err != nil {
 		log.Fatalf("Failure: %v", err)
 		return err
 	}
+
+	log.Printf("RequestTimestamp: %v, ResponseTimestamp: %v, Message: %v", request.Header.RequestTimestamp, 0, request.Body.Data)
 
 	for {
 		r, err := stream.Recv()
@@ -94,6 +98,7 @@ func clientSideStream(client pb.GrpcClient) error {
 	}
 
 	requestTimestamp := time.Now().Unix()
+	// when the for loop ends, err == io.EOF and server will receive it
 	for i := 0; i < 5 ; i++ {
 		request := &pb.Request{
 			Header: &pb.Header{RequestTimestamp: requestTimestamp},
@@ -117,6 +122,40 @@ func clientSideStream(client pb.GrpcClient) error {
 	}
 
 	log.Printf("RequestTimestamp: %v, ResponseTimestamp: %v, Message: %v", r.Header.RequestTimestamp, r.Header.ResponseTimestamp, r.Body.Data)
+
+	return nil
+}
+
+func BidirectionalStream(client pb.GrpcClient) error {
+	stream, err := client.BidirectionalStreamService(context.Background())
+	if err != nil {
+		log.Fatalf("Failure: %v", err)
+		return err
+	}
+
+	for {
+		request := &pb.Request{
+			Header: &pb.Header{RequestTimestamp: time.Now().Unix()},
+			Body: &pb.Body{Data: fmt.Sprintf("client has sent request data")},
+		}
+		err = stream.Send(request)
+		if err != nil {
+			log.Fatalf("Failure: %v", err)
+			return err
+		}
+
+		time.Sleep(time.Second)
+
+		r, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("Failure: %v", err)
+			return err
+		}
+		log.Printf("RequestTimestamp: %v, ResponseTimestamp: %v, Message: %v", r.Header.RequestTimestamp, r.Header.ResponseTimestamp, r.Body.Data)
+	}
 
 	return nil
 }
